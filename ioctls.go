@@ -5,6 +5,7 @@ package sevStep
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -32,7 +33,11 @@ func NewIoctlAPI(kvmFilePath string) (*IoctlAPI, error) {
 	return res, nil
 }
 
+//Close underlying ioctl file. Will also call CmdReset
 func (a *IoctlAPI) Close() error {
+	if err := a.CmdReset(); err != nil {
+		log.Printf("CmdReset failed before Close : %v", err)
+	}
 	return a.kvmFile.Close()
 }
 
@@ -85,9 +90,12 @@ func (a *IoctlAPI) CmdAckEvent(id uint64) error {
 func (a *IoctlAPI) CmdPollEvent() (*Event, bool, error) {
 	resultBuf := C.page_fault_event_t{}
 
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_POLL_EVENT, uintptr(unsafe.Pointer(&resultBuf)))
+	code, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_POLL_EVENT, uintptr(unsafe.Pointer(&resultBuf)))
+	if errno != 0 {
+		return nil, false, fmt.Errorf("KVM_USPT_ACK_EVENT ioctl failed with errno %v", errno)
+	}
 	//special return value for no event is no error
-	switch errno {
+	switch code {
 	case C.KVM_USPT_POLL_EVENT_NO_EVENT:
 		return nil, false, nil
 	case C.KVM_USPT_POLL_EVENT_GOT_EVENT:
@@ -98,7 +106,6 @@ func (a *IoctlAPI) CmdPollEvent() (*Event, bool, error) {
 			HaveRipInfo: bool(resultBuf.have_rip_info),
 			RIP:         uint64(resultBuf.rip),
 		}
-
 		return e, true, nil
 	default:
 		return nil, false, fmt.Errorf("KVM_USPT_ACK_EVENT ioctl failed with errno %v", errno)
@@ -111,7 +118,7 @@ func (a *IoctlAPI) CmdTrackPage(gpa uint64) error {
 		gpa: C.uint64_t(gpa),
 	}
 
-	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_POLL_EVENT, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_TRACK_PAGE, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
 		return fmt.Errorf("KVM_USPT_ACK_EVENT ioctl failed with errno %v", errno)
 	}
 	return nil
