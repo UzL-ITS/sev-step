@@ -15,6 +15,16 @@ import (
 //#include <stdlib.h>
 import "C"
 
+type PageTrackMode int
+
+const (
+	PageTrackWrite = PageTrackMode(iota)
+	PageTrackAccess
+	PageTrackResetAccess
+	PageTrackExec
+	PageTraceResetExec
+)
+
 type IoctlAPI struct {
 	kvmFile *os.File
 }
@@ -113,9 +123,10 @@ func (a *IoctlAPI) CmdPollEvent() (*Event, bool, error) {
 	}
 }
 
-func (a *IoctlAPI) CmdTrackPage(gpa uint64) error {
+func (a *IoctlAPI) CmdTrackPage(gpa uint64, trackMode PageTrackMode) error {
 	argStruct := C.track_page_param_t{
-		gpa: C.uint64_t(gpa),
+		gpa:        C.uint64_t(gpa),
+		track_mode: C.int(trackMode),
 	}
 
 	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_TRACK_PAGE, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {

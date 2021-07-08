@@ -74,6 +74,7 @@ typedef struct {
 
 typedef struct {
 	uint64_t gpa;
+	int track_mode;
 } track_page_param_t;
 
 typedef struct {
