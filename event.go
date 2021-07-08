@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"strings"
+	"time"
 )
 
 type jsonBytes []byte
@@ -37,10 +38,12 @@ type Event struct {
 	RIP         uint64    `json:"rip"`
 	MonitorGPA  uint64    `json:"monitor_gpa,omitempty"`
 	Content     jsonBytes `json:"content,omitempty"`
+	Timestamp   time.Time `json:"timestamp"`
 }
 
 func (e Event) String() string {
-	return fmt.Sprintf("{ID %d, FaultedGPA %x, HaveRip %d, RIP %x", e.ID, e.FaultedGPA, e.HaveRipInfo, e.RIP)
+	return fmt.Sprintf("{ID %d, FaultedGPA %x, HaveRip %t, RIP %x, Timestamp %v", e.ID,
+		e.FaultedGPA, e.HaveRipInfo, e.RIP, e.Timestamp.Format(time.StampNano))
 }
 
 func (e Event) HasAccessData() bool {

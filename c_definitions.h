@@ -65,6 +65,8 @@ typedef struct {
     uint32_t error_code;
 	bool have_rip_info;
 	uint64_t rip;
+	uint64_t ns_timestamp;
+
 } page_fault_event_t;
 
 typedef struct {

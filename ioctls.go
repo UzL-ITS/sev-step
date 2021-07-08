@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -109,12 +110,14 @@ func (a *IoctlAPI) CmdPollEvent() (*Event, bool, error) {
 	case C.KVM_USPT_POLL_EVENT_NO_EVENT:
 		return nil, false, nil
 	case C.KVM_USPT_POLL_EVENT_GOT_EVENT:
+
 		e := &Event{
 			ID:          uint64(resultBuf.id),
 			FaultedGPA:  uint64(resultBuf.faulted_gpa),
 			ErrorCode:   uint32(resultBuf.error_code),
 			HaveRipInfo: bool(resultBuf.have_rip_info),
 			RIP:         uint64(resultBuf.rip),
+			Timestamp:   time.Unix(0, int64(resultBuf.ns_timestamp)),
 		}
 		return e, true, nil
 	default:
