@@ -39,6 +39,10 @@ type Event struct {
 	Content     jsonBytes `json:"content,omitempty"`
 }
 
+func (e Event) String() string {
+	return fmt.Sprintf("{ID %d, FaultedGPA %x, HaveRip %d, RIP %x", e.ID, e.FaultedGPA, e.HaveRipInfo, e.RIP)
+}
+
 func (e Event) HasAccessData() bool {
 	return e.MonitorGPA != 0
 }
