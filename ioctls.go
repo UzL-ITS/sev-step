@@ -134,3 +134,27 @@ func (a *IoctlAPI) CmdTrackPage(gpa uint64, trackMode PageTrackMode) error {
 	}
 	return nil
 }
+
+func (a *IoctlAPI) CmdTrackAllPages(trackMode PageTrackMode) error {
+	argStruct := C.track_all_pages_t{
+		track_mode: C.int(trackMode),
+	}
+
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_TRACK_ALL, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return fmt.Errorf("KVM_USPT_TRACK_ALL ioctl failed with errno %v", errno)
+	}
+
+	return nil
+}
+
+func (a *IoctlAPI) CmdUnTrackAllPages(trackMode PageTrackMode) error {
+	argStruct := C.track_all_pages_t{
+		track_mode: C.int(trackMode),
+	}
+
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_UNTRACK_ALL, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return fmt.Errorf("KVM_USPT_UNTRACK_ALL ioctl failed with errno %v", errno)
+	}
+
+	return nil
+}

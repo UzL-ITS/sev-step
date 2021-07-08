@@ -84,6 +84,10 @@ typedef struct {
 	void* output_buffer;
 }read_guest_memory_t;
 
+typedef struct {
+	int track_mode;
+} track_all_pages_t;
+
 #define SIG_TEST 44
 #define KVMIO 0xAE
 
@@ -102,6 +106,7 @@ typedef struct {
 #define KVM_USPT_ACK_EVENT _IOWR(KVMIO, 0x24, ack_event_t) //done
 #define KVM_READ_GUEST_MEMORY _IOWR(KVMIO, 0x25, read_guest_memory_t) //done
 #define KVM_USPT_RESET _IO(KVMIO, 0x26) //done
-
+#define KVM_USPT_TRACK_ALL _IOWR(KVMIO, 0x27, track_all_pages_t)
+#define KVM_USPT_UNTRACK_ALL _IOWR(KVMIO, 0x28, track_all_pages_t)
 
 #endif // MY_KVM_IOCTLS
