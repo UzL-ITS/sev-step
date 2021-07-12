@@ -42,7 +42,7 @@ type Event struct {
 }
 
 func (e Event) String() string {
-	return fmt.Sprintf("{ID %d, FaultedGPA %x, HaveRip %t, RIP %x, Timestamp %v", e.ID,
+	return fmt.Sprintf("ID %d, FaultedGPA %x, HaveRip %t, RIP %x, Timestamp %v", e.ID,
 		e.FaultedGPA, e.HaveRipInfo, e.RIP, e.Timestamp.Format(time.StampNano))
 }
 
