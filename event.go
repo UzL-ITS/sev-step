@@ -2,6 +2,7 @@ package sevStep
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,9 +15,20 @@ import (
 type jsonBytes []byte
 
 func (h jsonBytes) MarshalJSON() ([]byte, error) {
-	res := make([]byte, 0, len(h))
-	hex.Encode(res, h)
-	return res, nil
+	buf := &bytes.Buffer{}
+	//encode as hex string, to make raw json more human friendly
+	//we need quotes around our value for json to be happy
+	if _, err := buf.WriteString("\""); err != nil {
+		return nil, err
+	}
+	encoder := hex.NewEncoder(buf)
+	if _, err := encoder.Write(h); err != nil {
+		return nil, err
+	}
+	if _, err := buf.WriteString("\""); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func (h *jsonBytes) UnmarshalJSON(b []byte) error {

@@ -3,10 +3,54 @@ package sevStep
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"reflect"
 	"testing"
 )
+
+func TestJsonBytes_MarshalJSON_UnmarshalJSON(t *testing.T) {
+	inputs := []jsonBytes{
+		{0, 1, 2, 3, 4},
+	}
+
+	for i, v := range inputs {
+		encoded, err := v.MarshalJSON()
+		if err != nil {
+			t.Errorf("Failed to marshal input %v\n", i)
+		}
+		buf := &jsonBytes{}
+		if err := buf.UnmarshalJSON(encoded); err != nil {
+			t.Errorf("Failed to unmarshal encoded version input %v\n", i)
+		}
+		if !bytes.Equal(*buf, v) {
+			t.Errorf("Input %v, missmatch, wanted %x got %v\n", i, *buf, v)
+		}
+	}
+}
+
+func TestEvent_Encode(t *testing.T) {
+	ev := &Event{
+		ID:          4,
+		FaultedGPA:  985686016,
+		ErrorCode:   20,
+		HaveRipInfo: true,
+		RIP:         139969225768391,
+		MonitorGPA:  959684384,
+		Content: func() jsonBytes {
+			s, err := hex.DecodeString("7e6927d61379d2620800000030000000")
+			if err != nil {
+				t.Fatalf("Failed to prepare test case: %v", err)
+			}
+			return s
+		}(),
+	}
+
+	_, err := json.Marshal(ev)
+	if err != nil {
+		t.Errorf("Failed to marshal event : %v\n", err)
+	}
+}
 
 func Test_parseEvent(t *testing.T) {
 	type args struct {
