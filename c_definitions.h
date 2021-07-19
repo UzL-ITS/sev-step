@@ -5,6 +5,15 @@
 #include <stdbool.h>
 #include <sys/ioctl.h>
 
+typedef struct {
+	int cpu; //cpu on which we want to read the counter
+	uint64_t retired_instruction_count; //result param
+} retired_instr_perf_t;
+
+typedef struct {
+	int cpu; //cpu on which counter should be programmed
+} retired_instr_perf_config_t;
+
 typedef struct dbg_decrypt_param {
 	uint64_t src_gpa;
 } dbg_decrypt_param_t;
@@ -57,6 +66,7 @@ typedef struct {
 
 typedef struct {
     int pid;
+	bool get_rip;
 } userspace_ctx_t;
 
 typedef struct {
@@ -110,5 +120,7 @@ typedef struct {
 #define KVM_USPT_RESET _IO(KVMIO, 0x26) //done
 #define KVM_USPT_TRACK_ALL _IOWR(KVMIO, 0x27, track_all_pages_t)
 #define KVM_USPT_UNTRACK_ALL _IOWR(KVMIO, 0x28, track_all_pages_t)
+#define KVM_USPT_SETUP_RETINSTR_PERF _IOWR(KVMIO, 0x30,retired_instr_perf_config_t)
+#define KVM_USPT_READ_RETINSTR_PERF _IOWR(KVMIO,0x31, retired_instr_perf_t)
 
 #endif // MY_KVM_IOCTLS

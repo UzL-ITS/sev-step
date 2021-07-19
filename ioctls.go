@@ -28,15 +28,27 @@ const (
 
 type IoctlAPI struct {
 	kvmFile *os.File
+	//If tryGetRIP is set the kernel
+	//side will enrich page fault events with their RIP. This only works for plain VMs or
+	//SEV-ES VMs with debug bit set in policy. However, for the latter getting the rip
+	//is still relatively expensive
+	tryGetRIP bool
 }
 
-//NewIoctlAPI opens kvm file and registers application. Must be Closed once done
-func NewIoctlAPI(kvmFilePath string) (*IoctlAPI, error) {
+//NewIoctlAPI opens kvm file and registers application. If tryGetRIP is set the kernel
+//side will enrich page fault events with their RIP. This only works for plain VMs or
+//SEV-ES VMs with debug bit set in policy. However, for the latter getting the rip
+//is still relatively expensive
+//IoctlAPI must be Closed once done
+func NewIoctlAPI(kvmFilePath string, tryGetRIP bool) (*IoctlAPI, error) {
 	f, err := os.OpenFile(kvmFilePath, syscall.O_RDWR|syscall.O_CREAT, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open device file : %v", err)
 	}
-	res := &IoctlAPI{kvmFile: f}
+	res := &IoctlAPI{
+		kvmFile:   f,
+		tryGetRIP: tryGetRIP,
+	}
 	err = res.register()
 	if err != nil {
 		return nil, fmt.Errorf("register failed : %v", err)
@@ -53,7 +65,10 @@ func (a *IoctlAPI) Close() error {
 }
 
 func (a *IoctlAPI) register() error {
-	registerStruct := C.userspace_ctx_t{pid: C.int(os.Getpid())}
+	registerStruct := C.userspace_ctx_t{
+		pid:     C.int(os.Getpid()),
+		get_rip: C.bool(a.tryGetRIP),
+	}
 	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_REGISTER_PID, uintptr(unsafe.Pointer(&registerStruct))); errno != 0 {
 		return fmt.Errorf("REGISTER_PID ioctl failed with errno %v", errno)
 	}
@@ -160,4 +175,30 @@ func (a *IoctlAPI) CmdUnTrackAllPages(trackMode PageTrackMode) error {
 	}
 
 	return nil
+}
+
+//CmdSetupRetInstrPerf initializes the "Retired Instruction in SVM Guest" Performance counter on
+//logical the given logical cpu
+func (a *IoctlAPI) CmdSetupRetInstrPerf(cpu int) error {
+	argStruct := C.retired_instr_perf_config_t{
+		cpu: C.int(cpu),
+	}
+
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_SETUP_RETINSTR_PERF, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return fmt.Errorf("KVM_USPT_SETUP_RETINSTR_PERF ioctl failed with errno %v", errno)
+
+	}
+	return nil
+}
+
+func (a *IoctlAPI) CmdReadRetInstrPerf(cpu int) (uint64, error) {
+	argStruct := C.retired_instr_perf_t{
+		cpu: C.int(cpu),
+	}
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_READ_RETINSTR_PERF, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return 0, fmt.Errorf("KVM_USPT_READ_RETINSTR_PERF ioctl failed with errno %v", errno)
+	}
+	retiredInstructions := uint64(argStruct.retired_instruction_count)
+
+	return retiredInstructions, nil
 }
