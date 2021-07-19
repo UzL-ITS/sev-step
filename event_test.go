@@ -29,7 +29,13 @@ func TestJsonBytes_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestEvent_Encode(t *testing.T) {
+func TestEvent_Encode_Decode_BigEvent(t *testing.T) {
+
+	content := make([]byte, 4096)
+	for i := range content {
+		content[i] = byte(i % 256)
+	}
+
 	ev := &Event{
 		ID:          4,
 		FaultedGPA:  985686016,
@@ -37,18 +43,21 @@ func TestEvent_Encode(t *testing.T) {
 		HaveRipInfo: true,
 		RIP:         139969225768391,
 		MonitorGPA:  959684384,
-		Content: func() jsonBytes {
-			s, err := hex.DecodeString("7e6927d61379d2620800000030000000")
-			if err != nil {
-				t.Fatalf("Failed to prepare test case: %v", err)
-			}
-			return s
-		}(),
+		Content:     content,
 	}
 
-	_, err := json.Marshal(ev)
+	buf, err := json.Marshal(ev)
 	if err != nil {
 		t.Errorf("Failed to marshal event : %v\n", err)
+	}
+
+	got := &Event{}
+	if err := json.Unmarshal(buf, got); err != nil {
+		t.Errorf("Failed to unmarshal event : %v\n", err)
+	}
+
+	if !reflect.DeepEqual(ev, got) {
+		t.Errorf("Decoded event differs from original!")
 	}
 }
 
