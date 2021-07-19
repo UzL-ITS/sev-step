@@ -82,12 +82,16 @@ func (a *IoctlAPI) CmdReset() error {
 	return nil
 }
 
-func (a *IoctlAPI) CmdReadGuestMemory(gpa, size uint64, hostDecryption bool) ([]byte, error) {
+//CmdReadGuestMemory reads size bytes from gpa and returns them as []byte. If hostDecryption is set, the data
+//is decrypted with the hosts memory encryption key before returning. If wbinvdCPU is >= 0, "wbinvd" is
+//executed on that logical CPU. This is required in the SEV-ES setting.
+func (a *IoctlAPI) CmdReadGuestMemory(gpa, size uint64, hostDecryption bool, wbinvdCPU int) ([]byte, error) {
 	buf := make([]byte, size)
 	argStruct := C.read_guest_memory_t{
 		gpa:                   C.uint64_t(gpa),
 		length:                C.uint64_t(size),
 		decrypt_with_host_key: C.bool(hostDecryption),
+		wbinvd_cpu:            C.int(wbinvdCPU),
 		output_buffer:         C.CBytes(buf),
 	}
 

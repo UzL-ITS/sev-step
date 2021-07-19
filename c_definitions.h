@@ -93,6 +93,7 @@ typedef struct {
 	uint64_t gpa;
 	uint64_t length;
 	bool decrypt_with_host_key;
+	int wbinvd_cpu; //-1: do not flush; else logical cpu on which we flush
 	void* output_buffer;
 }read_guest_memory_t;
 
