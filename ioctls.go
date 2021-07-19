@@ -206,3 +206,69 @@ func (a *IoctlAPI) CmdReadRetInstrPerf(cpu int) (uint64, error) {
 
 	return retiredInstructions, nil
 }
+
+//CmdBatchTrackingStart will instruct kernel to alloc room for expectedEvents many page fault events
+//that will be stored without userspace notification. The VCPU must be pinned to perfCPU because
+//the retired instruction perf is used to break page tracking loops without RIP progress
+//For re-tracking trackingType will be used. You still need to track the intial pages yourself, e.g.
+//by calling CmdUnTrackAllPages
+func (a *IoctlAPI) CmdBatchTrackingStart(trackingType PageTrackMode, expectedEvents uint64, perfCPU int) error {
+	argStruct := C.batch_track_config_t{
+		tracking_type:   C.int(trackingType),
+		expected_events: C.uint64_t(expectedEvents),
+		perf_cpu:        C.int(perfCPU),
+	}
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_BATCH_TRACK_START, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return fmt.Errorf("KVM_USPT_BATCH_TRACK_START ioctl failed with errno %v", errno)
+	}
+	return nil
+}
+
+func (a *IoctlAPI) CmdBatchTrackingEventCount() (uint64, error) {
+	argStruct := C.batch_track_event_count_t{}
+
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_BATCH_TRACK_EVENT_COUNT, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return 0, fmt.Errorf("KVM_USPT_BATCH_TRACK_EVENT_COUNT ioctl failed with errno %v", errno)
+	}
+	return uint64(argStruct.event_count), nil
+}
+
+func (a *IoctlAPI) CmdBatchTrackingStopAndGet(eventCount uint64) ([]*Event, bool, error) {
+
+	//allocate CBytes to hold result. No Gargabe collection
+	sizeofCEvent := uint64(C.sizeof_page_fault_event_t)
+	sizeofCBuf := sizeofCEvent * eventCount
+	cBuff := C.malloc(C.ulong(sizeofCBuf))
+	defer C.free(cBuff)
+
+	//call ioctl
+
+	argStruct := C.batch_track_stop_and_get_t{
+		out_buf:            (*C.page_fault_event_t)(cBuff),
+		length:             C.uint64_t(eventCount),
+		error_during_batch: C.bool(false),
+	}
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_BATCH_TRACK_STOP, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
+		return nil, false, fmt.Errorf("KVM_USPT_BATCH_TRACK_STOP ioctl failed with errno %v", errno)
+	}
+
+	//convert from c type to go type
+
+	//weird hacky cast from https://stackoverflow.com/questions/48756732/what-does-1-30c-yourtype-do-exactly-in-cgo
+	cBuffAsSlice := (*[1 << 30]C.page_fault_event_t)(unsafe.Pointer(cBuff))[:eventCount:eventCount]
+	events := make([]*Event, eventCount)
+	var cEvent C.page_fault_event_t
+	for i := range events {
+		cEvent = cBuffAsSlice[i]
+		events[i] = &Event{
+			ID:          uint64(cEvent.id),
+			FaultedGPA:  uint64(cEvent.faulted_gpa),
+			ErrorCode:   uint32(cEvent.error_code),
+			HaveRipInfo: bool(cEvent.have_rip_info),
+			RIP:         uint64(cEvent.rip),
+			Timestamp:   time.Unix(0, int64(cEvent.ns_timestamp)),
+		}
+	}
+
+	return events, bool(argStruct.error_during_batch), nil
+}

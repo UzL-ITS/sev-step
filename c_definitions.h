@@ -1,9 +1,37 @@
 #ifndef MY_KVM_IOCTLS
 #define MY_KVM_IOCTLS
 
-#include<stdint.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <sys/ioctl.h>
+
+
+typedef struct {
+    uint64_t id; //filled automatically
+    uint64_t faulted_gpa;
+    uint32_t error_code;
+	bool have_rip_info;
+	uint64_t rip;
+	uint64_t ns_timestamp;
+
+} page_fault_event_t;
+
+
+typedef struct {
+	int tracking_type;
+	uint64_t expected_events;
+	int perf_cpu;
+} batch_track_config_t;
+
+typedef struct {
+	uint64_t event_count;
+} batch_track_event_count_t;
+
+typedef struct {
+	page_fault_event_t* out_buf;
+	uint64_t length;
+	bool error_during_batch;
+} batch_track_stop_and_get_t;
 
 typedef struct {
 	int cpu; //cpu on which we want to read the counter
@@ -69,15 +97,7 @@ typedef struct {
 	bool get_rip;
 } userspace_ctx_t;
 
-typedef struct {
-    uint64_t id; //filled automatically
-    uint64_t faulted_gpa;
-    uint32_t error_code;
-	bool have_rip_info;
-	uint64_t rip;
-	uint64_t ns_timestamp;
 
-} page_fault_event_t;
 
 typedef struct {
     uint64_t id;
@@ -123,5 +143,8 @@ typedef struct {
 #define KVM_USPT_UNTRACK_ALL _IOWR(KVMIO, 0x28, track_all_pages_t)
 #define KVM_USPT_SETUP_RETINSTR_PERF _IOWR(KVMIO, 0x30,retired_instr_perf_config_t)
 #define KVM_USPT_READ_RETINSTR_PERF _IOWR(KVMIO,0x31, retired_instr_perf_t)
+#define KVM_USPT_BATCH_TRACK_START _IOWR(KVMIO,0x32,batch_track_config_t)
+#define KVM_USPT_BATCH_TRACK_STOP _IOWR(KVMIO,0x33,batch_track_stop_and_get_t)
+#define KVM_USPT_BATCH_TRACK_EVENT_COUNT _IOWR(KVMIO,0x34,batch_track_event_count_t)
 
 #endif // MY_KVM_IOCTLS
