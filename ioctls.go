@@ -56,6 +56,22 @@ func NewIoctlAPI(kvmFilePath string, tryGetRIP bool) (*IoctlAPI, error) {
 	return res, nil
 }
 
+//newGoEventFromCEvent is a helper converting the "page_fault_event_t" C struct
+//from c_definitions.h to the "Event" Go struct from event.go
+func newGoEventFromCEvent(cEvent *C.page_fault_event_t) *Event {
+	e := &Event{
+		ID:                      uint64(cEvent.id),
+		FaultedGPA:              uint64(cEvent.faulted_gpa),
+		ErrorCode:               uint32(cEvent.error_code),
+		HaveRipInfo:             bool(cEvent.have_rip_info),
+		RIP:                     uint64(cEvent.rip),
+		Timestamp:               time.Unix(0, int64(cEvent.ns_timestamp)),
+		HaveRetiredInstructions: bool(cEvent.have_retired_instructions),
+		RetiredInstructions:     uint64(cEvent.retired_instructions),
+	}
+	return e
+}
+
 //Close underlying ioctl file. Will also call CmdReset
 func (a *IoctlAPI) Close() error {
 	if err := a.CmdReset(); err != nil {
@@ -130,14 +146,7 @@ func (a *IoctlAPI) CmdPollEvent() (*Event, bool, error) {
 		return nil, false, nil
 	case C.KVM_USPT_POLL_EVENT_GOT_EVENT:
 
-		e := &Event{
-			ID:          uint64(resultBuf.id),
-			FaultedGPA:  uint64(resultBuf.faulted_gpa),
-			ErrorCode:   uint32(resultBuf.error_code),
-			HaveRipInfo: bool(resultBuf.have_rip_info),
-			RIP:         uint64(resultBuf.rip),
-			Timestamp:   time.Unix(0, int64(resultBuf.ns_timestamp)),
-		}
+		e := newGoEventFromCEvent(&resultBuf)
 		return e, true, nil
 	default:
 		return nil, false, fmt.Errorf("KVM_USPT_ACK_EVENT ioctl failed with errno %v", errno)
@@ -257,17 +266,8 @@ func (a *IoctlAPI) CmdBatchTrackingStopAndGet(eventCount uint64) ([]*Event, bool
 	//weird hacky cast from https://stackoverflow.com/questions/48756732/what-does-1-30c-yourtype-do-exactly-in-cgo
 	cBuffAsSlice := (*[1 << 30]C.page_fault_event_t)(unsafe.Pointer(cBuff))[:eventCount:eventCount]
 	events := make([]*Event, eventCount)
-	var cEvent C.page_fault_event_t
 	for i := range events {
-		cEvent = cBuffAsSlice[i]
-		events[i] = &Event{
-			ID:          uint64(cEvent.id),
-			FaultedGPA:  uint64(cEvent.faulted_gpa),
-			ErrorCode:   uint32(cEvent.error_code),
-			HaveRipInfo: bool(cEvent.have_rip_info),
-			RIP:         uint64(cEvent.rip),
-			Timestamp:   time.Unix(0, int64(cEvent.ns_timestamp)),
-		}
+		events[i] = newGoEventFromCEvent(&cBuffAsSlice[i])
 	}
 
 	return events, bool(argStruct.error_during_batch), nil

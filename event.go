@@ -43,14 +43,18 @@ func (h *jsonBytes) UnmarshalJSON(b []byte) error {
 }
 
 type Event struct {
-	ID          uint64    `json:"id"`
-	FaultedGPA  uint64    `json:"faulted_gpa"`
-	ErrorCode   uint32    `json:"error_code"`
-	HaveRipInfo bool      `json:"have_rip_info"`
-	RIP         uint64    `json:"rip"`
-	MonitorGPA  uint64    `json:"monitor_gpa,omitempty"`
-	Content     jsonBytes `json:"content,omitempty"`
-	Timestamp   time.Time `json:"timestamp"`
+	ID                      uint64    `json:"id"`
+	FaultedGPA              uint64    `json:"faulted_gpa"`
+	ErrorCode               uint32    `json:"error_code"`
+	HaveRipInfo             bool      `json:"have_rip_info"`
+	RIP                     uint64    `json:"rip"`
+	MonitorGPA              uint64    `json:"monitor_gpa,omitempty"`
+	Content                 jsonBytes `json:"content,omitempty"`
+	Timestamp               time.Time `json:"timestamp"`
+	HaveRetiredInstructions bool      `json:"have_retired_instructions"`
+	//RetiredInstructions are the instructions retired in the guest
+	//between this and the previous (by ID) page fault event
+	RetiredInstructions uint64 `json:"retired_instructions"`
 }
 
 func (e Event) String() string {
