@@ -219,13 +219,14 @@ func (a *IoctlAPI) CmdReadRetInstrPerf(cpu int) (uint64, error) {
 //CmdBatchTrackingStart will instruct kernel to alloc room for expectedEvents many page fault events
 //that will be stored without userspace notification. The VCPU must be pinned to perfCPU because
 //the retired instruction perf is used to break page tracking loops without RIP progress
-//For re-tracking trackingType will be used. You still need to track the intial pages yourself, e.g.
+//If re-track is set For the initial trackingType will be re-applied to faulted pages. You still need to track the intial pages yourself, e.g.
 //by calling CmdUnTrackAllPages
-func (a *IoctlAPI) CmdBatchTrackingStart(trackingType PageTrackMode, expectedEvents uint64, perfCPU int) error {
+func (a *IoctlAPI) CmdBatchTrackingStart(trackingType PageTrackMode, expectedEvents uint64, perfCPU int, retrack bool) error {
 	argStruct := C.batch_track_config_t{
 		tracking_type:   C.int(trackingType),
 		expected_events: C.uint64_t(expectedEvents),
 		perf_cpu:        C.int(perfCPU),
+		retrack:         C.bool(retrack),
 	}
 	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, a.kvmFile.Fd(), C.KVM_USPT_BATCH_TRACK_START, uintptr(unsafe.Pointer(&argStruct))); errno != 0 {
 		return fmt.Errorf("KVM_USPT_BATCH_TRACK_START ioctl failed with errno %v", errno)

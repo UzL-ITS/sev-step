@@ -22,6 +22,7 @@ typedef struct {
 	int tracking_type;
 	uint64_t expected_events;
 	int perf_cpu;
+	bool retrack;
 } batch_track_config_t;
 
 typedef struct {
