@@ -34,8 +34,7 @@ the definition of the ioctls and argument structs as well as
 documentation on how to use them.
 
 The go code in this repo is just a wrapper around this ioctl
-api. It can be used by simply including the module TODO
-in your go code. This simply exists because I was more
+api. This simply exists because I was more
 comfortable to build the (lengthy) attack tools
 used in the paper in Go instead of C.
 
