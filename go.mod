@@ -1,3 +1,3 @@
-module https://github.com/UzL-ITS/sev-step
+module github.com/UzL-ITS/sev-step
 
-go 1.16
+go 1.18
