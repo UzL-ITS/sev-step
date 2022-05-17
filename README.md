@@ -27,6 +27,9 @@ the qemu branch `sev-snp-devel` and the ovmf branch `sev-snp-rfc-5`
 However, this library also works against a plain VM, without any SEV
 specific Kernel, Qemu or OVMF version
 
+You need to disable transpartent hugepages for the page granular tracking to work correctly. This
+can be done e.g. via `echo "never" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
+
 # Use
 The kernel patch, exposes an ioctl based API that can be used by 
 any userspace application. The file `c_definitions.h` contains
@@ -40,3 +43,4 @@ used in the paper in Go instead of C.
 
 The Kernel part will print some status information to dmesg
 which can be helpful for debugging.
+
