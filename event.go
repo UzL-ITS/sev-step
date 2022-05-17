@@ -58,8 +58,12 @@ type Event struct {
 }
 
 func (e Event) String() string {
-	return fmt.Sprintf("ID %d, FaultedGPA %x, HaveRip %t, RIP %x, Timestamp %v", e.ID,
-		e.FaultedGPA, e.HaveRipInfo, e.RIP, e.Timestamp.Format(time.StampNano))
+	retInstr := "not measured"
+	if e.HaveRetiredInstructions {
+		retInstr = fmt.Sprintf("%v", e.RetiredInstructions)
+	}
+	return fmt.Sprintf("ID %d, FaultedGPA %x, HaveRip %t, RIP %x, Timestamp %v Retired Instructions %v", e.ID,
+		e.FaultedGPA, e.HaveRipInfo, e.RIP, e.Timestamp.Format(time.StampNano), retInstr)
 }
 
 func (e Event) HasAccessData() bool {
