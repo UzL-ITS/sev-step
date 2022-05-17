@@ -27,6 +27,9 @@ the qemu branch `sev-snp-devel` and the ovmf branch `sev-snp-rfc-5`
 However, this library also works against a plain VM, without any SEV
 specific Kernel, Qemu or OVMF version
 
+You need to disable transpartent hugepages for the page granular tracking to work correctly. This
+can be done e.g. via `echo "never" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
+
 # Use
 The kernel patch, exposes an ioctl based API that can be used by 
 any userspace application. The file `c_definitions.h` contains
@@ -34,10 +37,10 @@ the definition of the ioctls and argument structs as well as
 documentation on how to use them.
 
 The go code in this repo is just a wrapper around this ioctl
-api. It can be used by simply including the module TODO
-in your go code. This simply exists because I was more
+api. This simply exists because I was more
 comfortable to build the (lengthy) attack tools
 used in the paper in Go instead of C.
 
 The Kernel part will print some status information to dmesg
 which can be helpful for debugging.
+
