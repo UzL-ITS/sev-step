@@ -134,13 +134,13 @@ typedef struct {
 #define KVM_DBG_DEC _IOWR(KVMIO, 0x16, dbg_decrypt_param_t)
 #define KVM_SEV_STEP _IOWR(KVMIO, 0x17, sev_step_param_t)
 #define KVM_STOP_CNT _IO(KVMIO, 0x18)
-#define KVM_TRACK_PAGE _IOWR(KVMIO, 0x20, track_page_param_t) //done
-#define KVM_USPT_REGISTER_PID _IOWR(KVMIO, 0x21, userspace_ctx_t) //done
+#define KVM_TRACK_PAGE _IOWR(KVMIO, 0x20, track_page_param_t)
+#define KVM_USPT_REGISTER_PID _IOWR(KVMIO, 0x21, userspace_ctx_t)
 #define KVM_USPT_WAIT_AND_SEND _IO(KVMIO, 0x22) //deprecated
-#define KVM_USPT_POLL_EVENT _IOWR(KVMIO, 0x23, page_fault_event_t) //done
-#define KVM_USPT_ACK_EVENT _IOWR(KVMIO, 0x24, ack_event_t) //done
-#define KVM_READ_GUEST_MEMORY _IOWR(KVMIO, 0x25, read_guest_memory_t) //done
-#define KVM_USPT_RESET _IO(KVMIO, 0x26) //done
+#define KVM_USPT_POLL_EVENT _IOWR(KVMIO, 0x23, page_fault_event_t)
+#define KVM_USPT_ACK_EVENT _IOWR(KVMIO, 0x24, ack_event_t)
+#define KVM_READ_GUEST_MEMORY _IOWR(KVMIO, 0x25, read_guest_memory_t)
+#define KVM_USPT_RESET _IO(KVMIO, 0x26)
 #define KVM_USPT_TRACK_ALL _IOWR(KVMIO, 0x27, track_all_pages_t)
 #define KVM_USPT_UNTRACK_ALL _IOWR(KVMIO, 0x28, track_all_pages_t)
 #define KVM_USPT_SETUP_RETINSTR_PERF _IOWR(KVMIO, 0x30,retired_instr_perf_config_t)
