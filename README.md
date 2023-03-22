@@ -1,3 +1,7 @@
+# Archived
+
+This repo is now superseded by https://github.com/sev-step/sev-step
+
 # What is this
 
 This repository contains code to perform controlled channel
